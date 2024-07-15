@@ -48,7 +48,7 @@ public class StatefulOperations {
              ****************************************************************************/
 
             //Define the data directory to monitor for new files
-            String dataDir = "data/raw_audit_trail";
+            String dataDir = "/data/raw_audit_trail";
 
             //Define the text input format based on the directory
             TextInputFormat auditFormat = new TextInputFormat(

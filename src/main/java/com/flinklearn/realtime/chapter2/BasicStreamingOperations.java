@@ -49,7 +49,7 @@ public class BasicStreamingOperations {
          */
 
         // Define the data directory to monitor for new files
-        final String dataDir = "data/raw_audit_trail";
+        final String dataDir = "/data/raw_audit_trail";
 
         // Define the text input source
         final FileSource<String> auditTrailSource = FileSource
@@ -89,7 +89,7 @@ public class BasicStreamingOperations {
 
 
         // Define the output directory to store summary information
-        final String outputDir = "data/five_sec_summary";
+        final String outputDir = "/data/five_sec_summary";
         // Clean out existing files in the directory
         try {
             FileUtils.cleanDirectory(new File(outputDir));

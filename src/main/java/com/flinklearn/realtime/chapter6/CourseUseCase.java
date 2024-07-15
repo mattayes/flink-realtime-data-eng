@@ -42,7 +42,7 @@ public class CourseUseCase {
              ****************************************************************************/
 
             //Define the data directory to monitor for new files
-            String dataDir = "data/raw_browser_events";
+            String dataDir = "/data/raw_browser_events";
 
             //Define the text input format based on the directory
             TextInputFormat auditFormat = new TextInputFormat(

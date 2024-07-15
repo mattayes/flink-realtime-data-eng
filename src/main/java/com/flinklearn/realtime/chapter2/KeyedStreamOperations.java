@@ -40,7 +40,7 @@ public class KeyedStreamOperations {
          */
 
         // Define the data directory to monitor for new files
-        final String dataDir = "data/raw_audit_trail";
+        final String dataDir = "/data/raw_audit_trail";
 
         // Define the text input format based on the directory
         final FileSource<String> auditSource = FileSource

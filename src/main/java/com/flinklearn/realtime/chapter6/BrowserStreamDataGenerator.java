@@ -48,7 +48,7 @@ public class BrowserStreamDataGenerator implements Runnable {
             appOperation.add("Logout");
 
              //Define the data directory to output the files
-            String dataDir = "data/raw_browser_events";
+            String dataDir = "/data/raw_browser_events";
 
             //Clean out existing files in the directory
             FileUtils.cleanDirectory(new File(dataDir));

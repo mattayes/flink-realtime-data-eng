@@ -1,0 +1,33 @@
+services:
+  jobmanager:
+    image: flink:1.19.1
+    container_name: jobmanager
+    command: "jobmanager.sh start-foreground"
+    networks:
+    - flink-network
+    ports:
+      - "8081:8081"
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+      - "FLINK_PROPERTIES=jobmanager.rpc.address: jobmanager"
+    volumes:
+      - type: bind
+        source: ./data
+        target: /data
+
+  taskmanager:
+    image: flink:1.19.1
+    container_name: taskmanager
+    command: "taskmanager.sh start-foreground"
+    networks:
+      - flink-network
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+      - "FLINK_PROPERTIES=jobmanager.rpc.address: jobmanager"
+    depends_on:
+      - jobmanager
+
+
+networks:
+  flink-network:
+    external: true

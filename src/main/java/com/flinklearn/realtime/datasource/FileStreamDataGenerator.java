@@ -53,7 +53,7 @@ public class FileStreamDataGenerator implements Runnable {
         appEntity.add("SalesRep");
 
         //Define the data directory to output the files
-        String dataDir = "data/raw_audit_trail";
+        String dataDir = "/data/raw_audit_trail";
 
         //Clean out existing files in the directory
         try {
