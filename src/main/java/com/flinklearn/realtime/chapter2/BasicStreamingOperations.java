@@ -109,11 +109,9 @@ public class BasicStreamingOperations {
          */
         // Start the File Stream generator on a separate thread
         Utils.printHeader("Starting File Data Generator...");
-        Thread genThread = new Thread(new FileStreamDataGenerator());
+        final Thread genThread = new Thread(new FileStreamDataGenerator());
         genThread.start();
-
-        genThread.interrupt();
-
+        
         // execute the streaming pipeline
         try {
             env.execute("Flink Streaming Audit Trail Example");
