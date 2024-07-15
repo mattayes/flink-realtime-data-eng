@@ -7,6 +7,8 @@ import java.time.Duration;
 import com.flinklearn.realtime.common.MapCountPrinter;
 import com.flinklearn.realtime.common.Utils;
 import com.flinklearn.realtime.datasource.FileStreamDataGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.commons.io.FileUtils;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.MapFunction;
@@ -27,6 +29,8 @@ and writes to a file output
  */
 
 public class BasicStreamingOperations {
+
+    private static final Logger LOG = LoggerFactory.getLogger(BasicStreamingOperations.class);
 
     public static void main(String[] args) {
         /*
@@ -90,7 +94,7 @@ public class BasicStreamingOperations {
         try {
             FileUtils.cleanDirectory(new File(outputDir));
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("Error cleaning directory", e);
         }
 
         // Set up a streaming file sink to the output directory
@@ -111,12 +115,12 @@ public class BasicStreamingOperations {
         Utils.printHeader("Starting File Data Generator...");
         final Thread genThread = new Thread(new FileStreamDataGenerator());
         genThread.start();
-        
+
         // execute the streaming pipeline
         try {
             env.execute("Flink Streaming Audit Trail Example");
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("Error running pipeline", e);
         }
     }
 

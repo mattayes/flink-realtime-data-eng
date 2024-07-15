@@ -238,6 +238,7 @@ under the License.
 	<!-- This profile helps to make things run out of the box in IntelliJ -->
 	<!-- Its adds Flink's core classes to the runtime class path. -->
 	<!-- Otherwise they are missing in IntelliJ, because the dependency is 'provided' -->
+	<!-- Also adds logging dependencies, because they are 'runtime'-->
 	<profiles>
 		<profile>
 			<id>add-dependencies-for-IDEA</id>
@@ -259,6 +260,36 @@ under the License.
 					<groupId>org.apache.flink</groupId>
 					<artifactId>flink-streaming-java</artifactId>
 					<version>${flink.version}</version>
+					<scope>compile</scope>
+				</dependency>
+				<dependency>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-simple</artifactId>
+					<version>${slf4j.version}</version>
+					<scope>compile</scope>
+				</dependency>
+				<dependency>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-api</artifactId>
+					<version>${slf4j.version}</version>
+					<scope>compile</scope>
+				</dependency>
+				<dependency>
+					<groupId>org.apache.logging.log4j</groupId>
+					<artifactId>log4j-core</artifactId>
+					<version>${log4j.version}</version>
+					<scope>compile</scope>
+				</dependency>
+				<dependency>
+					<groupId>org.apache.logging.log4j</groupId>
+					<artifactId>log4j-api</artifactId>
+					<version>${log4j.version}</version>
+					<scope>compile</scope>
+				</dependency>
+				<dependency>
+					<groupId>org.apache.logging.log4j</groupId>
+					<artifactId>log4j-slf4j-impl</artifactId>
+					<version>${log4j.version}</version>
 					<scope>compile</scope>
 				</dependency>
 			</dependencies>

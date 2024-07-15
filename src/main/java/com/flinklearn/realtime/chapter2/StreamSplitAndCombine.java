@@ -18,6 +18,8 @@ import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.streaming.api.functions.co.CoMapFunction;
 import org.apache.flink.util.Collector;
 import org.apache.flink.util.OutputTag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 
@@ -26,6 +28,8 @@ A Flink Program to demonstrate working on keyed streams.
  */
 
 public class StreamSplitAndCombine {
+
+    private static final Logger LOG = LoggerFactory.getLogger(BasicStreamingOperations.class);
 
     public static void main(String[] args) {
 
@@ -153,7 +157,7 @@ public class StreamSplitAndCombine {
         try {
             env.execute("Flink Streaming Keyed Stream Example");
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("running pipeline", e);
         }
     }
 

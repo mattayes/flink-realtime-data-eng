@@ -10,6 +10,8 @@ import org.apache.flink.connector.file.src.reader.TextLineInputFormat;
 import org.apache.flink.core.fs.Path;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 
@@ -18,6 +20,8 @@ A Flink Program to demonstrate working on keyed streams.
  */
 
 public class KeyedStreamOperations {
+
+    private static final Logger LOG = LoggerFactory.getLogger(BasicStreamingOperations.class);
 
     public static void main(String[] args) {
 
@@ -81,7 +85,7 @@ public class KeyedStreamOperations {
         try {
             env.execute("Flink Streaming Keyed Stream Example");
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("Running pipeline", e);
         }
     }
 
