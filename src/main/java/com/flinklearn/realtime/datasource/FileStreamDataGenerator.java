@@ -2,6 +2,8 @@ package com.flinklearn.realtime.datasource;
 
 import com.opencsv.CSVWriter;
 import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -19,6 +21,7 @@ import java.util.Random;
 
 public class FileStreamDataGenerator implements Runnable {
 
+    private static final Logger LOG = LoggerFactory.getLogger(FileStreamDataGenerator.class);
 
     public static final String ANSI_RESET = "\u001B[0m";
     public static final String ANSI_GREEN = "\u001B[32m";
@@ -56,7 +59,7 @@ public class FileStreamDataGenerator implements Runnable {
         try {
             FileUtils.cleanDirectory(new File(dataDir));
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("cleaning directory", e);
         }
 
         //Define a random number generator
@@ -89,7 +92,7 @@ public class FileStreamDataGenerator implements Runnable {
                 auditFile = new FileWriter(dataDir
                         + "/audit_trail_" + i + ".csv");
             } catch (IOException e) {
-                e.printStackTrace();
+                LOG.error("creating FileWriter", e);
                 return;
             }
             final CSVWriter auditCSV = new CSVWriter(auditFile);
@@ -104,7 +107,7 @@ public class FileStreamDataGenerator implements Runnable {
                 auditCSV.flush();
                 auditCSV.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                LOG.error("closing auditCSV", e);
             }
 
 
@@ -112,7 +115,7 @@ public class FileStreamDataGenerator implements Runnable {
             try {
                 Thread.sleep(random.nextInt(2000) + 1);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                LOG.error("Interrupted", e);
                 return;
             }
         }

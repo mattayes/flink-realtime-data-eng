@@ -29,7 +29,7 @@ A Flink Program to demonstrate working on keyed streams.
 
 public class StreamSplitAndCombine {
 
-    private static final Logger LOG = LoggerFactory.getLogger(BasicStreamingOperations.class);
+    private static final Logger LOG = LoggerFactory.getLogger(StreamSplitAndCombine.class);
 
     public static void main(String[] args) {
 

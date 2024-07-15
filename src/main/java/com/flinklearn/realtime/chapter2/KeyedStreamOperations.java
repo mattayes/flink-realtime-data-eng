@@ -21,7 +21,7 @@ A Flink Program to demonstrate working on keyed streams.
 
 public class KeyedStreamOperations {
 
-    private static final Logger LOG = LoggerFactory.getLogger(BasicStreamingOperations.class);
+    private static final Logger LOG = LoggerFactory.getLogger(KeyedStreamOperations.class);
 
     public static void main(String[] args) {
 
