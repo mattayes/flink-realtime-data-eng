@@ -6,6 +6,7 @@ import com.flinklearn.realtime.datasource.FileStreamDataGenerator;
 import org.apache.commons.io.FileUtils;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.connector.file.src.FileSource;
@@ -54,7 +55,10 @@ public class StreamSplitAndCombine {
         final String dataDir = "/data/raw_audit_trail";
 
         // Define the text input format based on the directory
-        final FileSource<String> auditSource = FileSource.forRecordStreamFormat(new TextLineInputFormat(), new Path(dataDir)).monitorContinuously(Duration.ofSeconds(1)).build();
+        final FileSource<String> auditSource = FileSource
+                .forRecordStreamFormat(new TextLineInputFormat(), new Path(dataDir))
+                .monitorContinuously(Duration.ofSeconds(1))
+                .build();
 
         // Create a DataStream based on the directory
         final DataStream<String> auditTrailStream = env.fromSource(auditSource, WatermarkStrategy.noWatermarks(), "file-source");
@@ -65,7 +69,8 @@ public class StreamSplitAndCombine {
 
 
         // Create a Separate Trail for Sales Rep operations
-        final OutputTag<Tuple2<String, Integer>> salesRepTag = new OutputTag<>("sales-rep");
+        final OutputTag<Tuple2<String, Integer>> salesRepTag = new OutputTag<>("sales-rep") {
+        };
 
         // Convert each record to an Object
         final SingleOutputStreamOperator<AuditTrail> customerTrail = auditTrailStream.process(new ProcessFunction<>() {
@@ -75,17 +80,17 @@ public class StreamSplitAndCombine {
 
                 LOG.info("--- Received Record : {}", auditStr);
 
-                //Convert String to AuditTrail Object
+                // Convert String to AuditTrail Object
                 AuditTrail auditTrail = new AuditTrail(auditStr);
 
-                //Create output tuple with User and count
+                // Create output tuple with User and count
                 Tuple2<String, Integer> entityCount = new Tuple2<>(auditTrail.user, 1);
 
                 if (auditTrail.getEntity().equals("Customer")) {
-                    //Collect main output for Customer as AuditTrail
+                    // Collect main output for Customer as AuditTrail
                     collAudit.collect(auditTrail);
                 } else {
-                    //Collect side output for Sales Rep
+                    // Collect side output for Sales Rep
                     ctx.output(salesRepTag, entityCount);
                 }
             }
@@ -124,9 +129,9 @@ public class StreamSplitAndCombine {
 
         // Print the combined data stream
         processedTrail.map((MapFunction<Tuple3<String, String, Integer>, Tuple3<String, String, Integer>>) user -> {
-            System.out.println("--- Merged Record for User: " + user);
+            LOG.info("--- Merged Record for User: {}", user);
             return null;
-        });
+        }).returns(Types.TUPLE(Types.STRING, Types.STRING, Types.INT));
 
 
         /*

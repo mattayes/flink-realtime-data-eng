@@ -79,6 +79,7 @@ public class BasicStreamingOperations {
         // Window by 5 seconds, count #of records and save to output
         final DataStream<Tuple2<String, Integer>> recCount = auditTrailObj
                 .map(i -> new Tuple2<>(String.valueOf(System.currentTimeMillis()), 1))
+                // Need returns: https://nightlies.apache.org/flink/flink-docs-release-1.19/docs/dev/datastream/java_lambdas/
                 .returns(Types.TUPLE(Types.STRING, Types.INT))
                 .windowAll(TumblingProcessingTimeWindows.of(Duration.ofSeconds(5)))
                 .reduce((x, y) -> new Tuple2<>(x.f0, x.f1 + y.f1));
