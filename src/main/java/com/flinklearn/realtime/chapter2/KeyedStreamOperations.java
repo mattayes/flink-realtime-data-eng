@@ -21,9 +21,7 @@ A Flink Program to demonstrate working on keyed streams.
 
 public class KeyedStreamOperations {
 
-    private static final Logger LOG = LoggerFactory.getLogger(KeyedStreamOperations.class);
-
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
         /*
          *                 Setup Flink environment.
@@ -82,11 +80,7 @@ public class KeyedStreamOperations {
         genThread.start();
 
         // execute the streaming pipeline
-        try {
-            env.execute("Flink Streaming Keyed Stream Example");
-        } catch (Exception e) {
-            LOG.error("Running pipeline", e);
-        }
+        env.execute("Flink Streaming Keyed Stream Example");
     }
 
 }

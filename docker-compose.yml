@@ -9,7 +9,9 @@ services:
       - "8081:8081"
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
-      - "FLINK_PROPERTIES=jobmanager.rpc.address: jobmanager"
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
     volumes:
       - type: bind
         source: ./data
@@ -23,10 +25,15 @@ services:
       - flink-network
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
-      - "FLINK_PROPERTIES=jobmanager.rpc.address: jobmanager"
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
     depends_on:
       - jobmanager
-
+    volumes:
+      - type: bind
+        source: ./data
+        target: /data
 
 networks:
   flink-network:

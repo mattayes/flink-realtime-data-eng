@@ -23,12 +23,16 @@ public class FileStreamDataGenerator implements Runnable {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileStreamDataGenerator.class);
 
+    //Define the data directory to output the files
+    private static final String dataDir = "data/raw_audit_trail";
+
     public static final String ANSI_RESET = "\u001B[0m";
     public static final String ANSI_GREEN = "\u001B[32m";
     public static final String ANSI_CYAN = "\u001B[36m";
     public static final String ANSI_BLUE = "\u001B[34m";
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        DataDir.clean(dataDir);
         FileStreamDataGenerator fsdg = new FileStreamDataGenerator();
         fsdg.run();
     }
@@ -51,16 +55,6 @@ public class FileStreamDataGenerator implements Runnable {
         List<String> appEntity = new ArrayList<>();
         appEntity.add("Customer");
         appEntity.add("SalesRep");
-
-        //Define the data directory to output the files
-        String dataDir = "/data/raw_audit_trail";
-
-        //Clean out existing files in the directory
-        try {
-            FileUtils.cleanDirectory(new File(dataDir));
-        } catch (IOException e) {
-            LOG.error("cleaning directory", e);
-        }
 
         //Define a random number generator
         Random random = new Random();
