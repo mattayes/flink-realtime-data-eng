@@ -1,8 +1,8 @@
 package com.flinklearn.realtime.chapter2;
 
 import com.flinklearn.realtime.common.Utils;
-import com.flinklearn.realtime.datasource.DataDir;
 import com.flinklearn.realtime.datasource.FileStreamDataGenerator;
+import org.apache.commons.io.FileUtils;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -11,9 +11,8 @@ import org.apache.flink.connector.file.src.reader.TextLineInputFormat;
 import org.apache.flink.core.fs.Path;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.time.Duration;
 
 /*
@@ -77,7 +76,7 @@ public class KeyedStreamOperations {
          */
         // Start the File Stream generator on a separate thread
         Utils.printHeader("Starting File Data Generator...");
-        DataDir.clean("data/raw_audit_trail");
+        FileUtils.cleanDirectory(new File("data/raw_audit_trail"));
         final Thread genThread = new Thread(new FileStreamDataGenerator());
         genThread.start();
 

@@ -32,7 +32,7 @@ public class FileStreamDataGenerator implements Runnable {
     public static final String ANSI_BLUE = "\u001B[34m";
 
     public static void main(String[] args) throws Exception {
-        DataDir.clean(dataDir);
+        FileUtils.cleanDirectory(new File(dataDir));
         FileStreamDataGenerator fsdg = new FileStreamDataGenerator();
         fsdg.run();
     }

@@ -2,7 +2,13 @@
 
 ## Setup
 
-`./scripts/repo-setup.sh`
+Run `./scripts/repo-setup.sh`.
+
+### IntelliJ
+
+[Configure a JAR artifact](https://www.jetbrains.com/help/idea/compiling-applications.html#package_into_jar) for the project.
+Do not use a main class: you'll supply that later. For convenience, be sure to check "Include in project build".
+
 
 ## Environment: Docker Compose
 
@@ -16,8 +22,5 @@
 
 ## Running
 
-1. [Configure a JAR artifact](https://www.jetbrains.com/help/idea/compiling-applications.html#package_into_jar),
-   using the demo you'd like to run as the main class. For convenience, be sure to check
-   "Include in project build".
 2. [Rebuild the project](https://www.jetbrains.com/help/idea/compiling-applications.html#rebuild_project).
-3. Run `flink run ./out/artifacts/RealtimeDataEngg_jar/RealtimeDataEngg.jar`.
+3. Run the chapter/class you want to demo: `flink run --class com.flinklearn.realtime.<chapter>.<class> ./out/artifacts/RealtimeDataEngg_jar/RealtimeDataEngg.jar`.

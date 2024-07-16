@@ -1,11 +1,12 @@
 package com.flinklearn.realtime.chapter2;
 
+import java.io.File;
 import java.time.Duration;
 
 import com.flinklearn.realtime.common.MapCountPrinter;
 import com.flinklearn.realtime.common.Utils;
-import com.flinklearn.realtime.datasource.DataDir;
 import com.flinklearn.realtime.datasource.FileStreamDataGenerator;
+import org.apache.commons.io.FileUtils;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
@@ -95,11 +96,11 @@ public class BasicStreamingOperations {
          */
         // Start the File Stream generator on a separate thread
         Utils.printHeader("Starting File Data Generator...");
-        DataDir.clean("data/raw_audit_trail");
+        FileUtils.cleanDirectory(new File("data/raw_audit_trail"));
         final Thread genThread = new Thread(new FileStreamDataGenerator());
         genThread.start();
 
-        DataDir.clean("data/five_sec_summary");
+        FileUtils.cleanDirectory(new File("data/five_sec_summary"));
         env.execute("Flink Streaming Audit Trail Example");
     }
 
