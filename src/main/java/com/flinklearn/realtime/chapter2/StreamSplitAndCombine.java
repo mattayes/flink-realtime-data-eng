@@ -41,6 +41,7 @@ public class StreamSplitAndCombine {
 
         // Set up the streaming execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.enableCheckpointing(1_000); // 1s
 
         // Keeps the ordering of records. Else multiple threads can change
         // sequence of printing.

@@ -5,6 +5,7 @@ import com.flinklearn.realtime.datasource.FileStreamDataGenerator;
 import org.apache.commons.io.FileUtils;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.connector.file.src.FileSource;
 import org.apache.flink.connector.file.src.reader.TextLineInputFormat;
@@ -33,6 +34,7 @@ public class KeyedStreamOperations {
 
         // Set up the streaming execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.enableCheckpointing(1_000); // 1s
 
         LOG.info("Total Parallel Task Slots : {}", env.getParallelism());
 
@@ -61,7 +63,8 @@ public class KeyedStreamOperations {
                     LOG.info("--- Received Record : {}", auditStr);
                     AuditTrail at = new AuditTrail(auditStr);
                     return new Tuple2<>(at.user, at.duration);
-                }).keyBy(i -> i.f0)  // By username
+                }).returns(Types.TUPLE(Types.STRING, Types.INT))
+                .keyBy(i -> i.f0)  // By username
                 .reduce((x, y) -> new Tuple2<>(x.f0, x.f1 + y.f1));
 
         // Print User and Durations.
