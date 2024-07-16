@@ -1,6 +1,7 @@
 package com.flinklearn.realtime.chapter2;
 
 import com.flinklearn.realtime.common.Utils;
+import com.flinklearn.realtime.datasource.DataDir;
 import com.flinklearn.realtime.datasource.FileStreamDataGenerator;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.MapFunction;
@@ -76,6 +77,7 @@ public class KeyedStreamOperations {
          */
         // Start the File Stream generator on a separate thread
         Utils.printHeader("Starting File Data Generator...");
+        DataDir.clean("data/raw_audit_trail");
         final Thread genThread = new Thread(new FileStreamDataGenerator());
         genThread.start();
 

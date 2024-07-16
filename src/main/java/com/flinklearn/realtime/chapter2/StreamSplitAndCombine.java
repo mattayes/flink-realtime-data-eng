@@ -2,6 +2,7 @@ package com.flinklearn.realtime.chapter2;
 
 import com.flinklearn.realtime.common.MapCountPrinter;
 import com.flinklearn.realtime.common.Utils;
+import com.flinklearn.realtime.datasource.DataDir;
 import com.flinklearn.realtime.datasource.FileStreamDataGenerator;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.MapFunction;
@@ -36,15 +37,14 @@ public class StreamSplitAndCombine {
          */
 
         // Set up the streaming execution environment
-        final StreamExecutionEnvironment env
-                    = StreamExecutionEnvironment.getExecutionEnvironment();
+        final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         // Keeps the ordering of records. Else multiple threads can change
         // sequence of printing.
 
-        /****************************************************************************
+        /*
          *                  Read CSV File Stream into a DataStream.
-         ****************************************************************************/
+         */
 
         // Define the data directory to monitor for new files
         final String dataDir = "/data/raw_audit_trail";
@@ -86,9 +86,7 @@ public class StreamSplitAndCombine {
                         AuditTrail auditTrail = new AuditTrail(auditStr);
 
                         //Create output tuple with User and count
-                        Tuple2<String, Integer> entityCount
-                                = new Tuple2<>
-                                (auditTrail.user, 1);
+                        Tuple2<String, Integer> entityCount = new Tuple2<>(auditTrail.user, 1);
 
                         if (auditTrail.getEntity().equals("Customer")) {
                             //Collect main output for Customer as AuditTrail
@@ -136,11 +134,10 @@ public class StreamSplitAndCombine {
         });
 
         // Print the combined data stream
-        processedTrail
-                .map((MapFunction<Tuple3<String, String, Integer>, Tuple3<String, String, Integer>>) user -> {
-                    System.out.println("--- Merged Record for User: " + user);
-                    return null;
-                });
+        processedTrail.map((MapFunction<Tuple3<String, String, Integer>, Tuple3<String, String, Integer>>) user -> {
+            System.out.println("--- Merged Record for User: " + user);
+            return null;
+        });
 
 
         /*
@@ -148,6 +145,7 @@ public class StreamSplitAndCombine {
          */
         // Start the File Stream generator on a separate thread
         Utils.printHeader("Starting File Data Generator...");
+        DataDir.clean("data/raw_audit_trail");
         final Thread genThread = new Thread(new FileStreamDataGenerator());
         genThread.start();
 
