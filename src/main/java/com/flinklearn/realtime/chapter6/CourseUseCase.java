@@ -16,6 +16,8 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.FileProcessingMode;
 import org.apache.flink.streaming.api.windowing.time.Time;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /*
 A Flink Program that reads a files stream, computes a Map and Reduce operation,
@@ -24,9 +26,11 @@ and writes to a file output
 
 public class CourseUseCase {
 
+    private static final Logger LOG = LoggerFactory.getLogger(CourseUseCase.class);
+
     public static void main(String[] args) {
 
-        try{
+        try {
 
             /****************************************************************************
              *                 Setup Flink environment.
@@ -34,7 +38,7 @@ public class CourseUseCase {
 
             // Set up the streaming execution environment
             final StreamExecutionEnvironment streamEnv
-                        = StreamExecutionEnvironment.getExecutionEnvironment();
+                    = StreamExecutionEnvironment.getExecutionEnvironment();
 
 
             /****************************************************************************
@@ -50,49 +54,49 @@ public class CourseUseCase {
 
             //Create a Datastream based on the directory
             DataStream<String> browserEventsStr
-                        = streamEnv.readFile(auditFormat,
-                            dataDir,    //Director to monitor
-                            FileProcessingMode.PROCESS_CONTINUOUSLY,
-                            1000); //monitor interval
+                    = streamEnv.readFile(auditFormat,
+                    dataDir,    //Director to monitor
+                    FileProcessingMode.PROCESS_CONTINUOUSLY,
+                    1000); //monitor interval
 
             //Convert each record to an Tuple
-            DataStream<Tuple3<String,String,Long>> browserEventsObj
+            DataStream<Tuple3<String, String, Long>> browserEventsObj
                     = browserEventsStr
-                        .map(new MapFunction<String,Tuple3<String,String,Long>>() {
-                            @Override
-                            public Tuple3<String,String,Long> map(String eventStr) {
+                    .map(new MapFunction<String, Tuple3<String, String, Long>>() {
+                        @Override
+                        public Tuple3<String, String, Long> map(String eventStr) {
 
-                                System.out.println("--- Received Record : " + eventStr);
+                            System.out.println("--- Received Record : " + eventStr);
 
-                                String[] columns = eventStr
-                                                    .replace("\"","")
-                                                    .split(",");
+                            String[] columns = eventStr
+                                    .replace("\"", "")
+                                    .split(",");
 
-                                return new Tuple3<String,String,Long>(
-                                        columns[1], //User
-                                        columns[2], //Action
-                                        Long.valueOf(columns[3])); //Timestamp
-                            }
-                        });
+                            return new Tuple3<String, String, Long>(
+                                    columns[1], //User
+                                    columns[2], //Action
+                                    Long.valueOf(columns[3])); //Timestamp
+                        }
+                    });
 
             /****************************************************************************
              *                  By User / By Action 10 second Summary
-            ****************************************************************************/
+             ****************************************************************************/
 
-            DataStream<Tuple3<String,String,Integer>> userActionSummary =
-                browserEventsObj
-                        .map( x ->  new Tuple3<String,String,Integer>
-                                        (x.f0, x.f1, 1)) //Extract User,Action and Count 1
-                        .returns(Types.TUPLE(
-                                Types.STRING ,Types.STRING, Types.INT))
+            DataStream<Tuple3<String, String, Integer>> userActionSummary =
+                    browserEventsObj
+                            .map(x -> new Tuple3<String, String, Integer>
+                                    (x.f0, x.f1, 1)) //Extract User,Action and Count 1
+                            .returns(Types.TUPLE(
+                                    Types.STRING, Types.STRING, Types.INT))
 
-                        .keyBy(0,1) //By User and Action
+                            .keyBy(0, 1) //By User and Action
 
-                        .timeWindow(Time.seconds(10)) //10 Second window
+                            .timeWindow(Time.seconds(10)) //10 Second window
 
-                        .reduce( (x,y) -> //Sum the counts
-                                new Tuple3<String,String,Integer>
-                                        (x.f0, x.f1, x.f2 + y.f2));
+                            .reduce((x, y) -> //Sum the counts
+                                    new Tuple3<String, String, Integer>
+                                            (x.f0, x.f1, x.f2 + y.f2));
 
             //Pretty Print User Action 10 second Summary
             userActionSummary
@@ -100,9 +104,9 @@ public class CourseUseCase {
                         @Override
                         public Object map(Tuple3<String, String, Integer> summary) throws Exception {
                             System.out.println("User Action Summary : "
-                                + " User : " + summary.f0
-                                + ", Action : " + summary.f1
-                                + ", Total : " + summary.f2);
+                                    + " User : " + summary.f0
+                                    + ", Action : " + summary.f1
+                                    + ", Total : " + summary.f2);
                             return null;
                         }
                     });
@@ -111,7 +115,7 @@ public class CourseUseCase {
              *                  Find Duration of Each User Action
              ****************************************************************************/
 
-            DataStream<Tuple3<String,String,Long>> userActionDuration
+            DataStream<Tuple3<String, String, Long>> userActionDuration
                     = browserEventsObj
                     .keyBy(0)  //Key By User
 
@@ -124,20 +128,22 @@ public class CourseUseCase {
                         private transient ValueState<Long> lastEventStart;
 
                         @Override
-                        public void open(Configuration config) throws Exception{
+                        public void open(Configuration config) throws Exception {
 
                             //Setup state Stores
                             ValueStateDescriptor<String> nameDescriptor =
                                     new ValueStateDescriptor<String>(
                                             "last-action-name", // the state name
-                                            TypeInformation.of(new TypeHint<String>() {}));
+                                            TypeInformation.of(new TypeHint<String>() {
+                                            }));
 
                             lastEventName = getRuntimeContext().getState(nameDescriptor);
 
                             ValueStateDescriptor<Long> startDescriptor =
                                     new ValueStateDescriptor<Long>(
                                             "last-action-start", // the state name
-                                            TypeInformation.of(new TypeHint<Long>() {}));
+                                            TypeInformation.of(new TypeHint<Long>() {
+                                            }));
 
                             lastEventStart = getRuntimeContext().getState(startDescriptor);
                         }
@@ -151,10 +157,10 @@ public class CourseUseCase {
                             Long publishDuration = 0L;
 
                             //Check if its not the first event of the session
-                            if (lastEventName.value() != null ) {
+                            if (lastEventName.value() != null) {
 
                                 //If login event, duration not applicable
-                                if ( ! browserEvent.f1.equals("Login")) {
+                                if (!browserEvent.f1.equals("Login")) {
 
                                     //Set the last event name
                                     publishAction = lastEventName.value();
@@ -164,7 +170,7 @@ public class CourseUseCase {
                             }
 
                             //If logout event, unset the state trackers
-                            if ( browserEvent.f1.equals("Logout")) {
+                            if (browserEvent.f1.equals("Logout")) {
                                 lastEventName.clear();
                                 lastEventStart.clear();
                             }
@@ -174,7 +180,7 @@ public class CourseUseCase {
                                 lastEventStart.update(browserEvent.f2);
                             }
                             //Publish durations
-                            return new Tuple3<String,String,Long>(
+                            return new Tuple3<String, String, Long>(
                                     browserEvent.f0, publishAction, publishDuration);
                         }
                     });
@@ -197,15 +203,14 @@ public class CourseUseCase {
              *                  Setup data source and execute the Flink pipeline
              ****************************************************************************/
             //Start the Browser Stream generator on a separate thread
-            Utils.printHeader("Starting Browser Data Generator...");
+            Utils.printHeader(LOG, "Starting Browser Data Generator...");
             Thread genThread = new Thread(new BrowserStreamDataGenerator());
             genThread.start();
 
             // execute the streaming pipeline
             streamEnv.execute("Flink Streaming Course Use Case Example");
 
-        }
-        catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 

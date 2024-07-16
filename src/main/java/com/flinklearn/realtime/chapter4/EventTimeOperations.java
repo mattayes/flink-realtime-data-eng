@@ -20,6 +20,8 @@ import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer;
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema;
 import org.apache.flink.util.OutputTag;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.Date;
@@ -32,9 +34,11 @@ and writes to a file output
 
 public class EventTimeOperations {
 
+    private static final Logger LOG = LoggerFactory.getLogger(EventTimeOperations.class);
+
     public static void main(String[] args) {
 
-        try{
+        try {
 
             /****************************************************************************
              *                 Setup Flink environment.
@@ -42,7 +46,7 @@ public class EventTimeOperations {
 
             // Set up the streaming execution environment
             final StreamExecutionEnvironment streamEnv
-                        = StreamExecutionEnvironment.getExecutionEnvironment();
+                    = StreamExecutionEnvironment.getExecutionEnvironment();
 
             streamEnv.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
             streamEnv.setParallelism(1);
@@ -60,115 +64,116 @@ public class EventTimeOperations {
 
             //Create a Datastream based on the directory
             DataStream<String> auditTrailStr
-                        = streamEnv.readFile(auditFormat,
-                            dataDir,    //Director to monitor
-                            FileProcessingMode.PROCESS_CONTINUOUSLY,
-                            1000); //monitor interval
+                    = streamEnv.readFile(auditFormat,
+                    dataDir,    //Director to monitor
+                    FileProcessingMode.PROCESS_CONTINUOUSLY,
+                    1000); //monitor interval
 
 
             //Convert each record to an Object
             DataStream<AuditTrail> auditTrailObj
                     = auditTrailStr
-                        .map(new MapFunction<String,AuditTrail>() {
-                            @Override
-                            public AuditTrail map(String auditStr) {
-                                System.out.println("--- Received Record : " + auditStr);
-                                return new AuditTrail(auditStr);
-                            }
-                        });
+                    .map(new MapFunction<String, AuditTrail>() {
+                        @Override
+                        public AuditTrail map(String auditStr) {
+                            System.out.println("--- Received Record : " + auditStr);
+                            return new AuditTrail(auditStr);
+                        }
+                    });
 
             /****************************************************************************
              *                  Setup Event Time and Watermarks
              ****************************************************************************/
             //Create a water marked Data Stream
             DataStream<AuditTrail> auditTrailWithET
-                    =auditTrailObj.assignTimestampsAndWatermarks(
-                            (new AssignerWithPunctuatedWatermarks<AuditTrail>() {
+                    = auditTrailObj.assignTimestampsAndWatermarks(
+                    (new AssignerWithPunctuatedWatermarks<AuditTrail>() {
 
-                            //Extract Event timestamp value.
-                            @Override
-                            public long extractTimestamp(
-                                    AuditTrail auditTrail,
-                                    long previousTimeStamp) {
+                        //Extract Watermark
+                        transient long currWaterMark = 0L;
+                        int delay = 10000;
+                        int buffer = 2000;
 
-                                return auditTrail.getTimestamp();
-                                }
+                        //Extract Event timestamp value.
+                        @Override
+                        public long extractTimestamp(
+                                AuditTrail auditTrail,
+                                long previousTimeStamp) {
 
-                            //Extract Watermark
-                            transient long currWaterMark = 0L;
-                            int delay = 10000;
-                            int buffer = 2000;
+                            return auditTrail.getTimestamp();
+                        }
 
-                            @Nullable
-                            @Override
-                            public Watermark checkAndGetNextWatermark(
-                                    AuditTrail auditTrail,
-                                    long newTimestamp) {
+                        @Nullable
+                        @Override
+                        public Watermark checkAndGetNextWatermark(
+                                AuditTrail auditTrail,
+                                long newTimestamp) {
 
-                                long currentTime = System.currentTimeMillis();
-                                if (currWaterMark == 0L) {
-                                    currWaterMark = currentTime;
-                                }
-                                //update watermark every 10 seconds
-                                else if ( currentTime - currWaterMark > delay) {
-                                    currWaterMark = currentTime;
-                                }
-                                //return watermark adjusted to bufer
-                                return new Watermark(
-                                        currWaterMark - buffer);
-
+                            long currentTime = System.currentTimeMillis();
+                            if (currWaterMark == 0L) {
+                                currWaterMark = currentTime;
                             }
+                            //update watermark every 10 seconds
+                            else if (currentTime - currWaterMark > delay) {
+                                currWaterMark = currentTime;
+                            }
+                            //return watermark adjusted to bufer
+                            return new Watermark(
+                                    currWaterMark - buffer);
 
-                        }));
+                        }
+
+                    }));
 
             /****************************************************************************
              *                  Process a Watermarked Stream
              ***************************************************************************/
 
             //Create a Separate Trail for Late events
-            final OutputTag<Tuple2<String,Integer>> lateAuditTrail
-                    = new OutputTag<Tuple2<String,Integer>>("late-audit-trail"){};
+            final OutputTag<Tuple2<String, Integer>> lateAuditTrail
+                    = new OutputTag<Tuple2<String, Integer>>("late-audit-trail") {
+            };
 
             SingleOutputStreamOperator<Tuple2<String, Integer>> finalTrail
 
                     = auditTrailWithET
 
-                        .map(i -> new Tuple2<String, Integer> //get event timestamp and count
-                                (String.valueOf(i.getTimestamp()), 1))
-                        .returns(Types.TUPLE(Types.STRING, Types.INT))
+                    .map(i -> new Tuple2<String, Integer> //get event timestamp and count
+                            (String.valueOf(i.getTimestamp()), 1))
+                    .returns(Types.TUPLE(Types.STRING, Types.INT))
 
-                        .timeWindowAll(Time.seconds(1)) //Window by 1 second
+                    .timeWindowAll(Time.seconds(1)) //Window by 1 second
 
-                        .sideOutputLateData(lateAuditTrail) //Handle late data
+                    .sideOutputLateData(lateAuditTrail) //Handle late data
 
-                        .reduce((x, y) -> //Find total records every second
-                                (new Tuple2<String, Integer>(x.f0, x.f1 + y.f1)))
+                    .reduce((x, y) -> //Find total records every second
+                            (new Tuple2<String, Integer>(x.f0, x.f1 + y.f1)))
 
-                        //Pretty print
-                        .map(new MapFunction<Tuple2<String, Integer>,
-                                Tuple2<String, Integer>>() {
-                            @Override
-                            public Tuple2<String, Integer>
-                            map(Tuple2<String, Integer> minuteSummary)
-                                    throws Exception {
+                    //Pretty print
+                    .map(new MapFunction<Tuple2<String, Integer>,
+                            Tuple2<String, Integer>>() {
+                        @Override
+                        public Tuple2<String, Integer>
+                        map(Tuple2<String, Integer> minuteSummary)
+                                throws Exception {
 
-                                String currentTime = (new Date()).toString();
-                                String eventTime
-                                        = (new Date(Long.valueOf(minuteSummary.f0))).toString();
+                            String currentTime = (new Date()).toString();
+                            String eventTime
+                                    = (new Date(Long.valueOf(minuteSummary.f0))).toString();
 
-                                System.out.println("Summary : "
-                                        + " Current Time : " + currentTime
-                                        + " Event Time : " + eventTime
-                                        + " Count :" + minuteSummary.f1);
+                            System.out.println("Summary : "
+                                    + " Current Time : " + currentTime
+                                    + " Event Time : " + eventTime
+                                    + " Count :" + minuteSummary.f1);
 
-                                return minuteSummary;
-                            }
-                        });
+                            return minuteSummary;
+                        }
+                    });
 
 
             //Collect late events and process them later.
             DataStream<Tuple2<String, Integer>> lateTrail
-                    =  finalTrail.getSideOutput(lateAuditTrail);
+                    = finalTrail.getSideOutput(lateAuditTrail);
 
 
             /****************************************************************************
@@ -182,24 +187,24 @@ public class EventTimeOperations {
             //Create a Producer for Kafka
             FlinkKafkaProducer<String> kafkaProducer
                     = new FlinkKafkaProducer<String>(
-                            //Topic Name
-                            "flink.kafka.streaming.sink",
+                    //Topic Name
+                    "flink.kafka.streaming.sink",
 
-                            //Serialization for String data.
-                            (new KafkaSerializationSchema<String>() {
+                    //Serialization for String data.
+                    (new KafkaSerializationSchema<String>() {
 
-                                @Override
-                                public ProducerRecord<byte[], byte[]>
-                                    serialize(String s, @Nullable Long aLong) {
+                        @Override
+                        public ProducerRecord<byte[], byte[]>
+                        serialize(String s, @Nullable Long aLong) {
 
-                                    return (new ProducerRecord<byte[],byte[] >
-                                            ("flink.kafka.streaming.sink",
-                                                    s.getBytes()));
-                                }
-                            }),
+                            return (new ProducerRecord<byte[], byte[]>
+                                    ("flink.kafka.streaming.sink",
+                                            s.getBytes()));
+                        }
+                    }),
 
-                            properties,
-                            FlinkKafkaProducer.Semantic.EXACTLY_ONCE);
+                    properties,
+                    FlinkKafkaProducer.Semantic.EXACTLY_ONCE);
 
             //Publish to Kafka
             finalTrail //Convert to String and write to Kafka
@@ -220,15 +225,14 @@ public class EventTimeOperations {
              *                  Setup data source and execute the Flink pipeline
              ****************************************************************************/
             //Start the File Stream generator on a separate thread
-            Utils.printHeader("Starting File Data Generator...");
+            Utils.printHeader(LOG, "Starting File Data Generator...");
             Thread genThread = new Thread(new FileStreamDataGenerator());
             genThread.start();
 
             // execute the streaming pipeline
             streamEnv.execute("Flink Streaming Event Timestamp Example");
 
-        }
-        catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 

@@ -17,6 +17,8 @@ import org.apache.flink.streaming.api.functions.source.FileProcessingMode;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
 
@@ -27,9 +29,11 @@ and writes to a file output
 
 public class WindowJoins {
 
+    private static final Logger LOG = LoggerFactory.getLogger(WindowJoins.class);
+
     public static void main(String[] args) {
 
-        try{
+        try {
 
             /****************************************************************************
              *                 Setup Flink environment.
@@ -37,7 +41,7 @@ public class WindowJoins {
 
             // Set up the streaming execution environment
             final StreamExecutionEnvironment streamEnv
-                        = StreamExecutionEnvironment.getExecutionEnvironment();
+                    = StreamExecutionEnvironment.getExecutionEnvironment();
 
             /****************************************************************************
              *                  Read CSV File Stream into a DataStream.
@@ -52,22 +56,22 @@ public class WindowJoins {
 
             //Create a Datastream based on the directory
             DataStream<String> fileTrailStr
-                        = streamEnv.readFile(auditFormat,
-                            dataDir,    //Director to monitor
-                            FileProcessingMode.PROCESS_CONTINUOUSLY,
-                            1000); //monitor interval
+                    = streamEnv.readFile(auditFormat,
+                    dataDir,    //Director to monitor
+                    FileProcessingMode.PROCESS_CONTINUOUSLY,
+                    1000); //monitor interval
 
 
             //Convert each record to an Object
             DataStream<AuditTrail> fileTrailObj
                     = fileTrailStr
-                        .map(new MapFunction<String,AuditTrail>() {
-                            @Override
-                            public AuditTrail map(String auditStr) {
-                                System.out.println("--- Received File Record : " + auditStr);
-                                return new AuditTrail(auditStr);
-                            }
-                        });
+                    .map(new MapFunction<String, AuditTrail>() {
+                        @Override
+                        public AuditTrail map(String auditStr) {
+                            System.out.println("--- Received File Record : " + auditStr);
+                            return new AuditTrail(auditStr);
+                        }
+                    });
 
             /****************************************************************************
              *                  Read Kafka Topic Stream into a DataStream.
@@ -95,7 +99,7 @@ public class WindowJoins {
             //Convert each record to an Object
             DataStream<AuditTrail> kafkaTrailObj
                     = kafkaTrailStr
-                    .map(new MapFunction<String,AuditTrail>() {
+                    .map(new MapFunction<String, AuditTrail>() {
                         @Override
                         public AuditTrail map(String auditStr) {
                             System.out.println("--- Received Kafka Record : " + auditStr);
@@ -107,63 +111,62 @@ public class WindowJoins {
              *                  Join both streams based on the same window
              ****************************************************************************/
 
-             DataStream<Tuple2<String, Integer>> joinCounts =
-                fileTrailObj.join(kafkaTrailObj) //Join the two streams
+            DataStream<Tuple2<String, Integer>> joinCounts =
+                    fileTrailObj.join(kafkaTrailObj) //Join the two streams
 
-                     //WHERE used to select JOIN column from first Stream
-                    .where(new KeySelector<AuditTrail, String>() {
+                            //WHERE used to select JOIN column from first Stream
+                            .where(new KeySelector<AuditTrail, String>() {
 
-                        @Override
-                        public String getKey(AuditTrail auditTrail) throws Exception {
-                            return auditTrail.getUser();
-                        }
-                    })
-                     //EQUALTO used to select JOIN column from second stream
-                    .equalTo(new KeySelector<AuditTrail, String>() {
+                                @Override
+                                public String getKey(AuditTrail auditTrail) throws Exception {
+                                    return auditTrail.getUser();
+                                }
+                            })
+                            //EQUALTO used to select JOIN column from second stream
+                            .equalTo(new KeySelector<AuditTrail, String>() {
 
-                        @Override
-                        public String getKey(AuditTrail auditTrail) throws Exception {
-                            return auditTrail.getUser();
-                        }
-                    })
-                     //Create a Tumbling window of 5 seconds
-                    .window(TumblingProcessingTimeWindows.of(Time.seconds(5)))
+                                @Override
+                                public String getKey(AuditTrail auditTrail) throws Exception {
+                                    return auditTrail.getUser();
+                                }
+                            })
+                            //Create a Tumbling window of 5 seconds
+                            .window(TumblingProcessingTimeWindows.of(Time.seconds(5)))
 
-                        //Apply JOIN function. Will be called for each matched
-                        //combination of records.
-                     .apply(new JoinFunction<AuditTrail, AuditTrail,
-                             Tuple2<String,Integer>>() {
-                         @Override
-                         public Tuple2<String, Integer> join
-                                 (AuditTrail fileTrail,
-                                  AuditTrail kafkaTrail) throws Exception {
+                            //Apply JOIN function. Will be called for each matched
+                            //combination of records.
+                            .apply(new JoinFunction<AuditTrail, AuditTrail,
+                                    Tuple2<String, Integer>>() {
+                                @Override
+                                public Tuple2<String, Integer> join
+                                        (AuditTrail fileTrail,
+                                         AuditTrail kafkaTrail) throws Exception {
 
-                             return new Tuple2<String, Integer>(
-                                        fileTrail.getUser(), 1);
-                         }
-                     });
+                                    return new Tuple2<String, Integer>(
+                                            fileTrail.getUser(), 1);
+                                }
+                            });
 
-             //Print the counts
-             joinCounts.print();
+            //Print the counts
+            joinCounts.print();
 
             /****************************************************************************
-            *                  Setup data source and execute the Flink pipeline
-            ****************************************************************************/
+             *                  Setup data source and execute the Flink pipeline
+             ****************************************************************************/
             //Start the File Stream generator on a separate thread
-            Utils.printHeader("Starting File Data Generator...");
+            Utils.printHeader(LOG, "Starting File Data Generator...");
             Thread genThread = new Thread(new FileStreamDataGenerator());
             genThread.start();
 
             //Start the Kafka Stream generator on a separate thread
-            Utils.printHeader("Starting Kafka Data Generator...");
+            Utils.printHeader(LOG, "Starting Kafka Data Generator...");
             Thread kafkaThread = new Thread(new KafkaStreamDataGenerator());
             kafkaThread.start();
 
             // execute the streaming pipeline
             streamEnv.execute("Flink Streaming Window Joins Example");
 
-        }
-        catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 

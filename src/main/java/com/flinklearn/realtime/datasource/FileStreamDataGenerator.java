@@ -21,15 +21,13 @@ import java.util.Random;
 
 public class FileStreamDataGenerator implements Runnable {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FileStreamDataGenerator.class);
-
-    //Define the data directory to output the files
-    private static final String dataDir = "data/raw_audit_trail";
-
     public static final String ANSI_RESET = "\u001B[0m";
     public static final String ANSI_GREEN = "\u001B[32m";
     public static final String ANSI_CYAN = "\u001B[36m";
     public static final String ANSI_BLUE = "\u001B[34m";
+    private static final Logger LOG = LoggerFactory.getLogger(FileStreamDataGenerator.class);
+    //Define the data directory to output the files
+    private static final String dataDir = "data/raw_audit_trail";
 
     public static void main(String[] args) throws Exception {
         FileUtils.cleanDirectory(new File(dataDir));
@@ -60,7 +58,7 @@ public class FileStreamDataGenerator implements Runnable {
         Random random = new Random();
 
         //Generate 100 sample audit records, one per each file
-        for(int i=0; i < 100; i++) {
+        for (int i = 0; i < 100; i++) {
 
             //Capture current timestamp
             final String currentTime = String.valueOf(System.currentTimeMillis());
@@ -72,13 +70,13 @@ public class FileStreamDataGenerator implements Runnable {
             //Generate a random entity
             final String entity = appEntity.get(random.nextInt(appEntity.size()));
             //Generate a random duration for the operation
-            final String duration = String.valueOf(random.nextInt(10) + 1 );
+            final String duration = String.valueOf(random.nextInt(10) + 1);
             //Generate a random value for number of changes
             final String changeCount = String.valueOf(random.nextInt(4) + 1);
 
             //Create a CSV Text array
-            final String[] csvText = { String.valueOf(i), user, entity,
-                                    operation, currentTime, duration, changeCount} ;
+            final String[] csvText = {String.valueOf(i), user, entity,
+                    operation, currentTime, duration, changeCount};
 
             //Open a new file for this record
             FileWriter auditFile;
@@ -95,7 +93,7 @@ public class FileStreamDataGenerator implements Runnable {
             auditCSV.writeNext(csvText);
 
             System.out.println(ANSI_BLUE + "FileStream Generator : Creating File : "
-                        + Arrays.toString(csvText) + ANSI_RESET);
+                    + Arrays.toString(csvText) + ANSI_RESET);
 
             try {
                 auditCSV.flush();

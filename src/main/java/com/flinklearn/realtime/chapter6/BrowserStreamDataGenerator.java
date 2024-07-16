@@ -47,7 +47,7 @@ public class BrowserStreamDataGenerator implements Runnable {
             appOperation.add("ViewReview");
             appOperation.add("Logout");
 
-             //Define the data directory to output the files
+            //Define the data directory to output the files
             String dataDir = "data/raw_browser_events";
 
             //Clean out existing files in the directory
@@ -57,7 +57,7 @@ public class BrowserStreamDataGenerator implements Runnable {
             Random random = new Random();
 
             //Generate 100 sample audit records, one per each file
-            for(int i=0; i < 100; i++) {
+            for (int i = 0; i < 100; i++) {
 
                 //Capture current timestamp
                 String currentTime = String.valueOf(System.currentTimeMillis());
@@ -69,19 +69,19 @@ public class BrowserStreamDataGenerator implements Runnable {
                 //Generate a random entity
 
                 //Create a CSV Text array
-                String[] csvText = { String.valueOf(i), user,
-                                        operation, currentTime} ;
+                String[] csvText = {String.valueOf(i), user,
+                        operation, currentTime};
 
                 //Open a new file for this record
                 FileWriter auditFile = new FileWriter(dataDir
-                                            + "/browser_events" + i + ".csv");
+                        + "/browser_events" + i + ".csv");
                 CSVWriter auditCSV = new CSVWriter(auditFile);
 
                 //Write the audit record and close the file
                 auditCSV.writeNext(csvText);
 
                 System.out.println(ANSI_BLUE + "Browser Stream Generator : Creating File : "
-                            + Arrays.toString(csvText) + ANSI_RESET);
+                        + Arrays.toString(csvText) + ANSI_RESET);
 
                 auditCSV.flush();
                 auditCSV.close();

@@ -16,8 +16,8 @@ public class AuditTrail {
 
         //Split the string
         String[] attributes = auditStr
-                                .replace("\"","")
-                                .split(",");
+                .replace("\"", "")
+                .split(",");
 
         //Assign values
         this.id = Integer.parseInt(attributes[0]);

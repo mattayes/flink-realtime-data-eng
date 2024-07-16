@@ -1,16 +1,12 @@
 package com.flinklearn.realtime.chapter2;
 
-import java.io.File;
-import java.time.Duration;
-
 import com.flinklearn.realtime.common.MapCountPrinter;
 import com.flinklearn.realtime.common.Utils;
 import com.flinklearn.realtime.datasource.FileStreamDataGenerator;
 import org.apache.commons.io.FileUtils;
-import org.apache.flink.api.common.typeinfo.Types;
-import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.serialization.SimpleStringEncoder;
+import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.connector.file.sink.FileSink;
 import org.apache.flink.connector.file.src.FileSource;
@@ -18,6 +14,12 @@ import org.apache.flink.connector.file.src.reader.TextLineInputFormat;
 import org.apache.flink.core.fs.Path;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.time.Duration;
 
 /*
 A Flink Program that reads a files stream, computes a Map and Reduce operation,
@@ -25,6 +27,7 @@ and writes to a file output
  */
 
 public class BasicStreamingOperations {
+    private static final Logger LOG = LoggerFactory.getLogger(BasicStreamingOperations.class);
 
     public static void main(String[] args) throws Exception {
         // Set up the streaming execution environment
@@ -58,8 +61,8 @@ public class BasicStreamingOperations {
 
         // Convert each record to an Object
         final DataStream<AuditTrail> auditTrailObj = auditTrailStream
-                .map( auditStr -> {
-                    System.out.println("--- Received Record : " + auditStr);
+                .map(auditStr -> {
+                    LOG.info("--- Received Record : {}", auditStr);
                     return new AuditTrail(auditStr);
                 });
 
@@ -69,23 +72,24 @@ public class BasicStreamingOperations {
 
         // Print message for audit trail counts
         MapCountPrinter.printCount(
-                auditTrailObj.map( i -> i),
+                LOG,
+                auditTrailObj.map(i -> i),
                 "Audit Trail : Last 5 secs");
 
         // Window by 5 seconds, count #of records and save to output
-        final DataStream<Tuple2<String,Integer>> recCount = auditTrailObj
+        final DataStream<Tuple2<String, Integer>> recCount = auditTrailObj
                 .map(i -> new Tuple2<>(String.valueOf(System.currentTimeMillis()), 1))
-                .returns(Types.TUPLE(Types.STRING ,Types.INT))
+                .returns(Types.TUPLE(Types.STRING, Types.INT))
                 .windowAll(TumblingProcessingTimeWindows.of(Duration.ofSeconds(5)))
-                .reduce((x,y) -> new Tuple2<>(x.f0, x.f1 + y.f1));
+                .reduce((x, y) -> new Tuple2<>(x.f0, x.f1 + y.f1));
 
 
         // Set up a streaming file sink to the output directory
         final String outputDir = "/data/five_sec_summary";
-        final FileSink<Tuple2<String,Integer>> countSink = FileSink
+        final FileSink<Tuple2<String, Integer>> countSink = FileSink
                 .forRowFormat(
                         new Path(outputDir),
-                        new SimpleStringEncoder<Tuple2<String,Integer>>("UTF-8")
+                        new SimpleStringEncoder<Tuple2<String, Integer>>("UTF-8")
                 ).build();
 
         // Add the file sink as sink to the DataStream.
@@ -95,7 +99,7 @@ public class BasicStreamingOperations {
          *                  Setup data source and execute the Flink pipeline
          */
         // Start the File Stream generator on a separate thread
-        Utils.printHeader("Starting File Data Generator...");
+        Utils.printHeader(LOG, "Starting File Data Generator...");
         FileUtils.cleanDirectory(new File("data/raw_audit_trail"));
         final Thread genThread = new Thread(new FileStreamDataGenerator());
         genThread.start();

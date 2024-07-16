@@ -12,6 +12,8 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.assigners.ProcessingTimeSessionWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -24,9 +26,11 @@ and writes to a file output
 
 public class WindowingOperations {
 
+    private static final Logger LOG = LoggerFactory.getLogger(WindowingOperations.class);
+
     public static void main(String[] args) {
 
-        try{
+        try {
 
             /****************************************************************************
              *                 Setup Flink environment.
@@ -34,7 +38,7 @@ public class WindowingOperations {
 
             // Set up the streaming execution environment
             final StreamExecutionEnvironment streamEnv
-                        = StreamExecutionEnvironment.getExecutionEnvironment();
+                    = StreamExecutionEnvironment.getExecutionEnvironment();
 
             /****************************************************************************
              *                  Read Kafka Topic Stream into a DataStream.
@@ -62,7 +66,7 @@ public class WindowingOperations {
             //Convert each record to an Object
             DataStream<AuditTrail> auditTrailObj
                     = auditTrailStr
-                    .map(new MapFunction<String,AuditTrail>() {
+                    .map(new MapFunction<String, AuditTrail>() {
                         @Override
                         public AuditTrail map(String auditStr) {
                             System.out.println("--- Received Record : " + auditStr);
@@ -78,7 +82,7 @@ public class WindowingOperations {
             //for a sliding window interval of 10 seconds, sliding by 5 seconds
             DataStream<Tuple4<String, Integer, Long, Long>>
                     slidingSummary
-                        = auditTrailObj
+                    = auditTrailObj
                     .map(i
                             -> new Tuple4<String, Integer, Long, Long>
                             (String.valueOf(System.currentTimeMillis()), //Current Time
@@ -115,10 +119,10 @@ public class WindowingOperations {
                             = format.format(new Date(Long.valueOf(slidingSummary.f3)));
 
                     System.out.println("Sliding Summary : "
-                        + (new Date()).toString()
-                        + " Start Time : " + minTime
-                        + " End Time : " + maxTime
-                        + " Count : " + slidingSummary.f1);
+                            + (new Date()).toString()
+                            + " Start Time : " + minTime
+                            + " End Time : " + maxTime
+                            + " Count : " + slidingSummary.f1);
 
                     return null;
                 }
@@ -187,15 +191,14 @@ public class WindowingOperations {
              *                  Setup data source and execute the Flink pipeline
              ****************************************************************************/
             //Start the Kafka Stream generator on a separate thread
-            Utils.printHeader("Starting Kafka Data Generator...");
+            Utils.printHeader(LOG, "Starting Kafka Data Generator...");
             Thread kafkaThread = new Thread(new KafkaStreamDataGenerator());
             kafkaThread.start();
 
             // execute the streaming pipeline
             streamEnv.execute("Flink Windowing Example");
 
-        }
-        catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 

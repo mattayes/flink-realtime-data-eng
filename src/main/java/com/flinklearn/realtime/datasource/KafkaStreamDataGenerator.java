@@ -5,7 +5,10 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+import java.util.Random;
 
 /****************************************************************************
  * This Generator generates a series of data files in the raw_data folder
@@ -32,14 +35,14 @@ public class KafkaStreamDataGenerator implements Runnable {
 
             //Setup Kafka Client
             Properties kafkaProps = new Properties();
-            kafkaProps.put("bootstrap.servers","localhost:9092");
+            kafkaProps.put("bootstrap.servers", "localhost:9092");
 
             kafkaProps.put("key.serializer",
                     "org.apache.kafka.common.serialization.StringSerializer");
             kafkaProps.put("value.serializer",
                     "org.apache.kafka.common.serialization.StringSerializer");
 
-                Producer<String,String> myProducer
+            Producer<String, String> myProducer
                     = new KafkaProducer<String, String>(kafkaProps);
 
             //Define list of users
@@ -64,7 +67,7 @@ public class KafkaStreamDataGenerator implements Runnable {
             Random random = new Random();
 
             //Generate 100 sample audit records, one per each file
-            for(int i=0; i < 100; i++) {
+            for (int i = 0; i < 100; i++) {
 
                 //Capture current timestamp
                 String currentTime = String.valueOf(System.currentTimeMillis());
@@ -74,34 +77,32 @@ public class KafkaStreamDataGenerator implements Runnable {
                 //Generate a random operation
                 String operation = appOperation.get(random.nextInt(appOperation.size()));
                 //Generate a random entity
-                String entity= appEntity.get(random.nextInt(appEntity.size()));
+                String entity = appEntity.get(random.nextInt(appEntity.size()));
                 //Generate a random duration for the operation
-                String duration = String.valueOf(random.nextInt(10) + 1 );
+                String duration = String.valueOf(random.nextInt(10) + 1);
                 //Generate a random value for number of changes
                 String changeCount = String.valueOf(random.nextInt(4) + 1);
 
                 //Create a CSV Text array
-                String[] csvText = { String.valueOf(i), user, entity,
-                                        operation, currentTime, duration, changeCount} ;
+                String[] csvText = {String.valueOf(i), user, entity,
+                        operation, currentTime, duration, changeCount};
 
 
                 String recKey = String.valueOf(currentTime);
                 ProducerRecord<String, String> record =
-                        new ProducerRecord<String,String>(
+                        new ProducerRecord<String, String>(
                                 "flink.kafka.streaming.source",
                                 recKey,
-                                String.join(",", csvText)  );
+                                String.join(",", csvText));
 
                 RecordMetadata rmd = myProducer.send(record).get();
 
                 System.out.println(ANSI_PURPLE + "Kafka Stream Generator : Sending Event : "
-                            + String.join(",", csvText)  + ANSI_RESET);
+                        + String.join(",", csvText) + ANSI_RESET);
 
                 //Sleep for a random time ( 1 - 3 secs) before the next record.
                 Thread.sleep(random.nextInt(2000) + 1);
             }
-
-
 
 
         } catch (Exception e) {

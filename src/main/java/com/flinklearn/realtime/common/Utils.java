@@ -1,11 +1,10 @@
 package com.flinklearn.realtime.common;
 
-public  class Utils {
+import org.slf4j.Logger;
 
-    public static void printHeader(String msg) {
+public class Utils {
 
-        System.out.println("\n**************************************************************");
-        System.out.println(msg);
-        System.out.println("---------------------------------------------------------------");
+    public static void printHeader(Logger log, String msg) {
+        log.info("\n**************************************************************\n{}\n---------------------------------------------------------------", msg);
     }
 }

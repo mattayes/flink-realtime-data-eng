@@ -1,7 +1,6 @@
 package com.flinklearn.realtime.chapter5;
 
 import com.flinklearn.realtime.chapter2.AuditTrail;
-import com.flinklearn.realtime.common.MapCountPrinter;
 import com.flinklearn.realtime.common.Utils;
 import com.flinklearn.realtime.datasource.FileStreamDataGenerator;
 import org.apache.flink.api.common.functions.FilterFunction;
@@ -11,7 +10,6 @@ import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.common.typeinfo.TypeHint;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.api.java.io.TextInputFormat;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
@@ -20,6 +18,8 @@ import org.apache.flink.core.fs.Path;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.FileProcessingMode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /*
 A Flink Program to demonstrate working on keyed streams.
@@ -27,9 +27,11 @@ A Flink Program to demonstrate working on keyed streams.
 
 public class StatefulOperations {
 
+    private static final Logger LOG = LoggerFactory.getLogger(StatefulOperations.class);
+
     public static void main(String[] args) {
 
-        try{
+        try {
 
             /****************************************************************************
              *                 Setup Flink environment.
@@ -37,7 +39,7 @@ public class StatefulOperations {
 
             // Set up the streaming execution environment
             final StreamExecutionEnvironment streamEnv
-                        = StreamExecutionEnvironment.getExecutionEnvironment();
+                    = StreamExecutionEnvironment.getExecutionEnvironment();
 
             //Keeps the ordering of records. Else multiple threads can change
             //sequence of printing.
@@ -56,24 +58,24 @@ public class StatefulOperations {
 
             //Create a Datastream based on the directory
             DataStream<String> auditTrailStr
-                        = streamEnv.readFile(auditFormat,
-                            dataDir,    //Director to monitor
-                            FileProcessingMode.PROCESS_CONTINUOUSLY,
-                            1000); //monitor interval
+                    = streamEnv.readFile(auditFormat,
+                    dataDir,    //Director to monitor
+                    FileProcessingMode.PROCESS_CONTINUOUSLY,
+                    1000); //monitor interval
 
             /****************************************************************************
              *                 Using simple Stateful Operations
-            ****************************************************************************/
+             ****************************************************************************/
 
             //Convert each record to an Object
-            DataStream<Tuple3<String,String, Long>> auditTrailState
+            DataStream<Tuple3<String, String, Long>> auditTrailState
                     = auditTrailStr
-                    .map(new MapFunction<String,Tuple3<String,String, Long>>() {
+                    .map(new MapFunction<String, Tuple3<String, String, Long>>() {
                         @Override
-                        public Tuple3<String,String, Long> map(String auditStr) {
+                        public Tuple3<String, String, Long> map(String auditStr) {
                             System.out.println("--- Received Record : " + auditStr);
                             AuditTrail auditTrail = new AuditTrail(auditStr);
-                            return new Tuple3<String,String, Long>(
+                            return new Tuple3<String, String, Long>(
                                     auditTrail.getUser(),
                                     auditTrail.getOperation(),
                                     auditTrail.getTimestamp());
@@ -84,17 +86,18 @@ public class StatefulOperations {
             DataStream<Tuple2<String, Long>> deleteIntervals
                     = auditTrailState
                     .keyBy(0)
-                    .map(new RichMapFunction<Tuple3<String,String,Long>, Tuple2<String, Long>>() {
+                    .map(new RichMapFunction<Tuple3<String, String, Long>, Tuple2<String, Long>>() {
 
                         private transient ValueState<Long> lastDelete;
 
                         @Override
-                        public void open(Configuration config) throws Exception{
+                        public void open(Configuration config) throws Exception {
 
                             ValueStateDescriptor<Long> descriptor =
                                     new ValueStateDescriptor<Long>(
                                             "last-delete", // the state name
-                                            TypeInformation.of(new TypeHint<Long>() {}));
+                                            TypeInformation.of(new TypeHint<Long>() {
+                                            }));
 
                             lastDelete = getRuntimeContext().getState(descriptor);
 
@@ -102,23 +105,23 @@ public class StatefulOperations {
 
                         @Override
                         public Tuple2<String, Long>
-                            map(Tuple3<String,String, Long> auditTrail) throws Exception {
+                        map(Tuple3<String, String, Long> auditTrail) throws Exception {
 
-                            Tuple2<String,Long> retTuple
-                                    = new Tuple2<String,Long>("No-Alerts",0L);
+                            Tuple2<String, Long> retTuple
+                                    = new Tuple2<String, Long>("No-Alerts", 0L);
 
                             //If two deletes were done by the same user within 10 seconds
-                            if ( auditTrail.f1.equals("Delete")) {
+                            if (auditTrail.f1.equals("Delete")) {
 
-                                if ( lastDelete.value() != null) {
+                                if (lastDelete.value() != null) {
 
                                     long timeDiff
                                             = auditTrail.f2
-                                                - lastDelete.value();
+                                            - lastDelete.value();
 
-                                    if ( timeDiff < 10000L) {
-                                        retTuple = new Tuple2<String,Long>(
-                                                auditTrail.f0,timeDiff);
+                                    if (timeDiff < 10000L) {
+                                        retTuple = new Tuple2<String, Long>(
+                                                auditTrail.f0, timeDiff);
                                     }
                                 }
                                 lastDelete.update(auditTrail.f2);
@@ -131,10 +134,9 @@ public class StatefulOperations {
                         @Override
                         public boolean filter(Tuple2<String, Long> alert) throws Exception {
 
-                            if ( alert.f0.equals("No-Alerts")) {
+                            if (alert.f0.equals("No-Alerts")) {
                                 return false;
-                            }
-                            else {
+                            } else {
                                 System.out.println("\n!! DELETE Alert Received : User "
                                         + alert.f0 + " executed 2 deletes within "
                                         + alert.f1 + " ms" + "\n");
@@ -148,15 +150,14 @@ public class StatefulOperations {
              *                  Setup data source and execute the Flink pipeline
              ****************************************************************************/
             //Start the File Stream generator on a separate thread
-            Utils.printHeader("Starting File Data Generator...");
+            Utils.printHeader(LOG, "Starting File Data Generator...");
             Thread genThread = new Thread(new FileStreamDataGenerator());
             genThread.start();
 
             // execute the streaming pipeline
             streamEnv.execute("Flink Streaming Stateful Operations Example");
 
-        }
-        catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
