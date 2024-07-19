@@ -1,40 +1,66 @@
 services:
-  jobmanager:
+  flink-jobmanager:
     image: flink:1.19.1
-    container_name: jobmanager
+    container_name: flink-jobmanager
     command: "jobmanager.sh start-foreground"
-    networks:
-      - flink-network
     ports:
       - "8081:8081"
     environment:
-      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+      - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
       - |
         FLINK_PROPERTIES=
-        jobmanager.rpc.address: jobmanager
+        jobmanager.rpc.address: flink-jobmanager
     volumes:
       - type: bind
         source: ./data
         target: /data
-
-  taskmanager:
+  flink-taskmanager:
     image: flink:1.19.1
-    container_name: taskmanager
+    container_name: flink-taskmanager
     command: "taskmanager.sh start-foreground"
-    networks:
-      - flink-network
     environment:
-      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+      - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
       - |
         FLINK_PROPERTIES=
-        jobmanager.rpc.address: jobmanager
+        jobmanager.rpc.address: flink-jobmanager
     depends_on:
-      - jobmanager
+      - flink-jobmanager
     volumes:
       - type: bind
         source: ./data
         target: /data
-
-networks:
-  flink-network:
-    external: true
+  kafka-broker:
+    image: bitnami/kafka:latest
+    container_name: kafka-broker
+    ports:
+      - 9094:9094
+    volumes:
+      - kafka_data:/bitnami
+    environment:
+      - KAFKA_ENABLE_KRAFT=yes
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka-broker:9092,EXTERNAL://localhost:9094
+      - KAFKA_BROKER_ID=1
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@127.0.0.1:9093
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
+      - BITNAMI_DEBUG=yes
+      - KAFKA_CFG_NUM_PARTITIONS=2
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - 8080:8080
+    environment:
+      - DYNAMIC_CONFIG_ENABLED=true
+    volumes:
+      - type: bind
+        source: ${HOME}/.kui/config.yml
+        target: /etc/kafkaui/dynamic_config.yaml
+volumes:
+  kafka_data:
+    driver: local

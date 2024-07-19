@@ -3,12 +3,11 @@ package com.flinklearn.realtime.datasource;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.producer.RecordMetadata;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
 
 /****************************************************************************
  * This Generator generates a series of data files in the raw_data folder
@@ -17,7 +16,6 @@ import java.util.Random;
  ****************************************************************************/
 
 public class KafkaStreamDataGenerator implements Runnable {
-
 
     public static final String ANSI_RESET = "\u001B[0m";
     public static final String ANSI_GREEN = "\u001B[32m";
@@ -31,39 +29,36 @@ public class KafkaStreamDataGenerator implements Runnable {
 
     public void run() {
 
-        try {
+        // Setup Kafka Client
+        Properties kafkaProps = new Properties();
+        kafkaProps.put("bootstrap.servers", "localhost:9094");
 
-            //Setup Kafka Client
-            Properties kafkaProps = new Properties();
-            kafkaProps.put("bootstrap.servers", "localhost:9092");
+        kafkaProps.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        kafkaProps.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
 
-            kafkaProps.put("key.serializer",
-                    "org.apache.kafka.common.serialization.StringSerializer");
-            kafkaProps.put("value.serializer",
-                    "org.apache.kafka.common.serialization.StringSerializer");
+        try (Producer<String, String> myProducer = new KafkaProducer<>(kafkaProps)) {
+            // Define list of users
+            List<String> appUser = List.of(
+                    "Tom",
+                    "Harry",
+                    "Bob"
+            );
 
-            Producer<String, String> myProducer
-                    = new KafkaProducer<String, String>(kafkaProps);
+            // Define list of application operations
+            List<String> appOperation = List.of(
+                    "Create",
+                    "Modify",
+                    "Query",
+                    "Delete"
+            );
 
-            //Define list of users
-            List<String> appUser = new ArrayList<String>();
-            appUser.add("Tom");
-            appUser.add("Harry");
-            appUser.add("Bob");
+            // Define list of application entities
+            List<String> appEntity = List.of(
+                    "Customer",
+                    "SalesRep"
+            );
 
-            //Define list of application operations
-            List<String> appOperation = new ArrayList<String>();
-            appOperation.add("Create");
-            appOperation.add("Modify");
-            appOperation.add("Query");
-            appOperation.add("Delete");
-
-            //Define list of application entities
-            List<String> appEntity = new ArrayList<String>();
-            appEntity.add("Customer");
-            appEntity.add("SalesRep");
-
-            //Define a random number generator
+            // Define a random number generator
             Random random = new Random();
 
             //Generate 100 sample audit records, one per each file
@@ -84,31 +79,29 @@ public class KafkaStreamDataGenerator implements Runnable {
                 String changeCount = String.valueOf(random.nextInt(4) + 1);
 
                 //Create a CSV Text array
-                String[] csvText = {String.valueOf(i), user, entity,
-                        operation, currentTime, duration, changeCount};
+                String[] csvText = {String.valueOf(i), user, entity, operation, currentTime, duration, changeCount};
 
 
-                String recKey = String.valueOf(currentTime);
-                ProducerRecord<String, String> record =
-                        new ProducerRecord<String, String>(
-                                "flink.kafka.streaming.source",
-                                recKey,
-                                String.join(",", csvText));
+                ProducerRecord<String, String> record = new ProducerRecord<>(
+                        "flink.kafka.streaming.source",
+                        currentTime,
+                        String.join(",", csvText));
 
-                RecordMetadata rmd = myProducer.send(record).get();
+                try {
+                    myProducer.send(record).get();
+                    System.out.println(ANSI_PURPLE + "Kafka Stream Generator : Sending Event : " + String.join(",", csvText) + ANSI_RESET);
+                } catch (ExecutionException | InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
 
-                System.out.println(ANSI_PURPLE + "Kafka Stream Generator : Sending Event : "
-                        + String.join(",", csvText) + ANSI_RESET);
-
-                //Sleep for a random time ( 1 - 3 secs) before the next record.
-                Thread.sleep(random.nextInt(2000) + 1);
+                // Sleep for a random time ( 1 - 3 secs) before the next record.
+                try {
+                    Thread.sleep(random.nextInt(2000) + 1);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             }
-
-
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-
     }
 
 

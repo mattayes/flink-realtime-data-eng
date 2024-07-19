@@ -31,3 +31,14 @@ then
   echo "Docker is missing. Ensure it is installed and on PATH" >&2
   exit 1
 fi
+
+
+if [ ! -d "$HOME/.kui" ]
+then
+  mkdir -m 777 "$HOME/.kui"
+fi
+
+if [ ! -f "$HOME/.kui/config.yml" ]
+then
+  (umask 001; touch "$HOME/.kui/config.yml")
+fi

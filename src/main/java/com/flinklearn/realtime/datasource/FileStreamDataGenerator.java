@@ -2,8 +2,6 @@ package com.flinklearn.realtime.datasource;
 
 import com.opencsv.CSVWriter;
 import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -25,7 +23,6 @@ public class FileStreamDataGenerator implements Runnable {
     public static final String ANSI_GREEN = "\u001B[32m";
     public static final String ANSI_CYAN = "\u001B[36m";
     public static final String ANSI_BLUE = "\u001B[34m";
-    private static final Logger LOG = LoggerFactory.getLogger(FileStreamDataGenerator.class);
     //Define the data directory to output the files
     private static final String dataDir = "data/raw_audit_trail";
 
@@ -84,8 +81,7 @@ public class FileStreamDataGenerator implements Runnable {
                 auditFile = new FileWriter(dataDir
                         + "/audit_trail_" + i + ".csv");
             } catch (IOException e) {
-                LOG.error("creating FileWriter", e);
-                return;
+                throw new RuntimeException(e);
             }
             final CSVWriter auditCSV = new CSVWriter(auditFile);
 
@@ -99,7 +95,7 @@ public class FileStreamDataGenerator implements Runnable {
                 auditCSV.flush();
                 auditCSV.close();
             } catch (IOException e) {
-                LOG.error("closing auditCSV", e);
+                throw new RuntimeException(e);
             }
 
 
@@ -107,8 +103,7 @@ public class FileStreamDataGenerator implements Runnable {
             try {
                 Thread.sleep(random.nextInt(2000) + 1);
             } catch (InterruptedException e) {
-                LOG.error("Interrupted", e);
-                return;
+                throw new RuntimeException(e);
             }
         }
 

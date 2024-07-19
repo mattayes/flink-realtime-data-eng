@@ -138,7 +138,7 @@ public class StreamSplitAndCombine {
          *                  Setup data source and execute the Flink pipeline
          */
         // Start the File Stream generator on a separate thread
-        Utils.printHeader(LOG, "Starting File Data Generator...");
+        Utils.printHeader("Starting File Data Generator...");
         FileUtils.cleanDirectory(new File("data/raw_audit_trail"));
         final Thread genThread = new Thread(new FileStreamDataGenerator());
         genThread.start();
