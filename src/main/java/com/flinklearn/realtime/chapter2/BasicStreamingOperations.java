@@ -49,7 +49,7 @@ public class BasicStreamingOperations {
         final String dataDir = "/data/raw_audit_trail";
         final FileSource<String> auditTrailSource = FileSource
                 .forRecordStreamFormat(new TextLineInputFormat(), new Path(dataDir))
-                .monitorContinuously(Duration.ofSeconds(1)) //monitor interval
+                .monitorContinuously(Duration.ofSeconds(1)) // monitor interval
                 .build();
 
         // Create a DataStream based on the source
