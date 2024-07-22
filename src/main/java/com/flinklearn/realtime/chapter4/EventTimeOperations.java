@@ -152,6 +152,7 @@ public class EventTimeOperations {
          */
 
         // Create a sink for Kafka
+
         KafkaSink<String> kafkaSink = KafkaSink.<String>builder()
                 .setBootstrapServers("kafka-broker:9092")
                 .setRecordSerializer(KafkaRecordSerializationSchema.builder()
@@ -160,7 +161,10 @@ public class EventTimeOperations {
                         .build()
                 )
                 .setDeliveryGuarantee(DeliveryGuarantee.EXACTLY_ONCE)
-                .setProperty("transaction.timeout.ms", "60000") // breaks without this
+                // BUG (2025-07) (mh): Flink incorrectly thinks the default is 1h when it's actually 15min.
+                // Flink: https://github.com/apache/flink-connector-kafka/blob/86f796a01cba0d7b3adeb95f413e412c30e466f1/flink-connector-kafka/src/main/java/org/apache/flink/connector/kafka/sink/KafkaSinkBuilder.java#L64
+                // Kafka: https://github.com/apache/kafka/blob/f48e764f7ecd937dff22983f6e7de52e282d18e8/transaction-coordinator/src/main/java/org/apache/kafka/coordinator/transaction/TransactionStateManagerConfigs.java#L31
+                .setProperty("transaction.timeout.ms", Long.toString(Duration.ofMinutes(15).toMillis()))
                 .build();
 
         //Publish to Kafka
