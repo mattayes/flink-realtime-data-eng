@@ -1,0 +1,11 @@
+auth:
+  type: DISABLED
+kafka:
+  clusters:
+  - bootstrapServers: kafka-broker:9092
+    name: Flink Realtime
+    properties: {}
+    readOnly: false
+rbac:
+  roles: []
+webclient: {}

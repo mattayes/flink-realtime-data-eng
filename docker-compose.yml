@@ -50,6 +50,21 @@ services:
       - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
       - BITNAMI_DEBUG=yes
       - KAFKA_CFG_NUM_PARTITIONS=2
+    healthcheck:
+      test: [ "CMD", "kafka-topics.sh", "--list", "--bootstrap-server", "kafka-broker:9092" ]
+      start_period: 20s
+      timeout: 5s
+  kafka-setup:
+    image: bitnami/kafka:latest
+    container_name: kafka-setup
+    depends_on:
+      kafka-broker:
+        condition: service_healthy
+    restart: no
+    command: bash -c "
+      kafka-topics.sh --create --if-not-exists --topic flink.kafka.streaming.source --bootstrap-server kafka-broker:9092 &&
+      kafka-topics.sh --create --if-not-exists --topic flink.kafka.streaming.sink --bootstrap-server kafka-broker:9092
+      "
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
@@ -57,9 +72,11 @@ services:
       - 8080:8080
     environment:
       - DYNAMIC_CONFIG_ENABLED=true
+    depends_on:
+      - kafka-broker
     volumes:
       - type: bind
-        source: ${HOME}/.kui/config.yml
+        source: ./kui_config.yml
         target: /etc/kafkaui/dynamic_config.yaml
 volumes:
   kafka_data:

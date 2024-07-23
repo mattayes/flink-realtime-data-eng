@@ -44,8 +44,7 @@ then
 fi
 
 
-mkdir_if_not_exist "$HOME/.kui"
-if [ ! -f "$HOME/.kui/config.yml" ]
+if [ ! -f "kui_config.yml" ]
 then
-  (umask 001; touch "$HOME/.kui/config.yml")
+  (umask 001; touch "kui_config.yml")
 fi
