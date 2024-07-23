@@ -25,4 +25,4 @@ Do not use a main class: you'll supply that later. For convenience, be sure to c
 1. [Rebuild the project](https://www.jetbrains.com/help/idea/compiling-applications.html#rebuild_project).
 1. Run the chapter/class you want to
    demo: `flink run --class com.flinklearn.realtime.<chapter>.<class> ./out/artifacts/RealtimeDataEngg_jar/RealtimeDataEngg.jar`.
-1. Follow along with logs/STDOUT: `docker compose logs --follow taskmanager`
+1. Follow along with logs/STDOUT: `docker compose logs --follow flink-taskmanager`
