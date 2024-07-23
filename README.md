@@ -14,7 +14,7 @@ Do not use a main class: you'll supply that later. For convenience, be sure to c
 
 ### Startup
 
-`docker compose up -d`
+`docker compose up --wait`
 
 ### Teardown
 
