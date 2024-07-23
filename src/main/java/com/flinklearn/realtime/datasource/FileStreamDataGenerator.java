@@ -34,25 +34,25 @@ public class FileStreamDataGenerator implements Runnable {
 
     public void run() {
         //Define list of users
-        List<String> appUser = new ArrayList<>();
+        final List<String> appUser = new ArrayList<>();
         appUser.add("Tom");
         appUser.add("Harry");
         appUser.add("Bob");
 
         //Define list of application operations
-        List<String> appOperation = new ArrayList<>();
+        final List<String> appOperation = new ArrayList<>();
         appOperation.add("Create");
         appOperation.add("Modify");
         appOperation.add("Query");
         appOperation.add("Delete");
 
         //Define list of application entities
-        List<String> appEntity = new ArrayList<>();
+        final List<String> appEntity = new ArrayList<>();
         appEntity.add("Customer");
         appEntity.add("SalesRep");
 
         //Define a random number generator
-        Random random = new Random();
+        final Random random = new Random();
 
         //Generate 100 sample audit records, one per each file
         for (int i = 0; i < 100; i++) {

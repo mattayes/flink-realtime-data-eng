@@ -5,12 +5,23 @@ set -e
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 DATA_DIR="$SCRIPT_DIR/../data"
 
-if [ ! -d "$DATA_DIR" ]
-then
-  mkdir -m 777 "$DATA_DIR"
-  mkdir -m 777 "$DATA_DIR/raw_audit_trail"
-  mkdir -m 777 "$DATA_DIR/five_sec_summary"
-fi
+mkdir_if_not_exist() {
+  local DIR="$1"
+  if [ ! -d "$DIR" ]
+  then
+    mkdir -m 777 "$DIR"
+  fi
+}
+
+for DIR in \
+  "$DATA_DIR" \
+  "$DATA_DIR/raw_audit_trail" \
+  "$DATA_DIR/five_sec_summary" \
+  "$DATA_DIR/five_sec_summary" \
+  "$DATA_DIR/raw_browser_events"
+do
+  mkdir_if_not_exist "$DIR"
+done
 
 if ! command -v flink &> /dev/null
 then
@@ -33,11 +44,7 @@ then
 fi
 
 
-if [ ! -d "$HOME/.kui" ]
-then
-  mkdir -m 777 "$HOME/.kui"
-fi
-
+mkdir_if_not_exist "$HOME/.kui"
 if [ ! -f "$HOME/.kui/config.yml" ]
 then
   (umask 001; touch "$HOME/.kui/config.yml")
